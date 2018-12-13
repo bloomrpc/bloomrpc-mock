@@ -43,7 +43,7 @@
   "keywords": [
     "oclif"
   ],
-  "license": "MIT",
+  "license": "LGPL3",
   "main": "lib/index.js",
   "oclif": {
     "bin": "bloomrpc"
