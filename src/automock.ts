@@ -1,6 +1,5 @@
 import {UntypedServiceImplementation} from "grpc";
 import {Enum, Field, Message, Root, Service, Type} from "protobufjs";
-import {serviceByName} from './protobuf';
 import * as uuid from 'uuid';
 
 export interface MethodPayload {
@@ -8,7 +7,7 @@ export interface MethodPayload {
   message: Message,
 }
 
-export type ServiceMethodsPayload  = {
+export type ServiceMethodsPayload = {
   [name: string]: () => MethodPayload
 }
 
@@ -197,13 +196,7 @@ function mockField(field: Field): any {
     case "float":
       return 1.100;
     case "bytes":
-      let bytes: number[] = [];
-      const str = "Hello";
-      for (let i = 0; i < str.length; ++i) {
-        const code = str.charCodeAt(i);
-        bytes = bytes.concat([code & 0xff, code / 256 >>> 0]);
-      }
-      return bytes.join(', ');
+      return new Buffer("Hello");
 
     default:
       const resolvedField = field.resolve();
