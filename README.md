@@ -2,7 +2,7 @@
   <img src="./resources/logo.png" />
 </p>
 
-#BloomRPC-Mock
+BloomRPC-Mock
 ========
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
