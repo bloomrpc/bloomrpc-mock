@@ -1,13 +1,13 @@
 {
   "name": "bloomrpc-mock",
   "description": "Automock your grpc services",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "author": "Fabrizio Fenoglio (UtilityWarehouse)",
   "bin": {
     "brpc-mock": "./bin/run",
     "bloomrpc-mock": "./bin/run"
   },
-  "bugs": "https://github.com/fenos/bloomrpc/issues",
+  "bugs": "https://github.com/uw-labs/bloomrpc-mock/issues",
   "dependencies": {
     "@grpc/proto-loader": "^0.3.0",
     "@oclif/command": "^1",
@@ -39,7 +39,7 @@
     "/bin",
     "/lib"
   ],
-  "homepage": "https://github.com/fenos/bloomrpc",
+  "homepage": "https://github.com/uw-labs/bloomrpc-mocks",
   "keywords": [
     "oclif"
   ],

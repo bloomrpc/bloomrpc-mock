@@ -1,13 +1,12 @@
+import {bgCyan, green, yellow} from 'colors/safe';
 import {Server, ServerCredentials} from 'grpc';
-import { fromFileName, serviceByName, walkServices } from "./protobuf";
-import {mockServiceMethods} from "./automock";
-import { green, bgCyan, yellow, red } from "colors/safe";
-import { ReflectionObject, Service } from 'protobufjs';
+import {Service} from 'protobufjs';
+
+import {mockServiceMethods} from './automock';
+import {fromFileName, walkServices} from './protobuf';
 
 /**
  * Start a mock GRPC Server
- * @param protoPath
- * @param serverPort
  */
 export async function startGRPCServer(protoPath: string, serverPort: string) {
   const server = new Server({});
@@ -17,11 +16,11 @@ export async function startGRPCServer(protoPath: string, serverPort: string) {
   let services = 0;
   walkServices(proto, (service, def) => {
     bindServiceToServer(service, server, def);
-    services++
+    services++;
   });
 
   if (services === 0) {
-    console.log(yellow("No Services found in your proto file"));
+    console.log(yellow('No Services found in your proto file'));
     return;
   }
 
@@ -31,13 +30,12 @@ export async function startGRPCServer(protoPath: string, serverPort: string) {
   console.log(bgCyan(`\nGRPC Server listening on port ${serverPort}!`));
 }
 
-
 function bindServiceToServer(service: Service, server: Server, def: any) {
   console.log(yellow(`[Service] ${service.fullName} detected:`));
 
   const serviceImpl = mockServiceMethods(service);
 
-  Object.keys(serviceImpl).forEach((method) =>
+  Object.keys(serviceImpl).forEach(method =>
     console.log(green(`    [Method] ${method} registered`))
   );
 

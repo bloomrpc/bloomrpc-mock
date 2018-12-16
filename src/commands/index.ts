@@ -1,7 +1,8 @@
-import {Command, flags} from '@oclif/command'
-import {startGRPCServer} from "../server";
-import {red, white, yellow} from "colors/safe";
-import * as path from "path";
+import {Command, flags} from '@oclif/command';
+import {red, white, yellow} from 'colors/safe';
+import * as path from 'path';
+
+import {startGRPCServer} from '../server';
 
 class Bloomrpc extends Command {
   static description = 'Automock a GRPC Server from a proto definition';
@@ -11,7 +12,7 @@ class Bloomrpc extends Command {
     version: flags.version({char: 'v'}),
     help: flags.help({char: 'h'}),
 
-    port: flags.string({char: 'p', default: "3009"})
+    port: flags.string({char: 'p', default: '3009'})
   };
 
   static args = [{name: 'file'}];
@@ -19,6 +20,7 @@ class Bloomrpc extends Command {
   async run() {
     const {args, flags} = this.parse(Bloomrpc);
 
+    /* tslint:disable */
     console.log(
       white(`
      _______    .---.      ,-----.       ,-----.   ,---.    ,---.-------.   .-------.    _______   
@@ -32,23 +34,22 @@ class Bloomrpc extends Command {
     /_______.'  \`--------\` '-----'       '-----'   '--'      '--''-'   \`'-' \`---'       \`._____.'    
     `)
     );
-
+    // /* tslint:enable */
     try {
-
       if (!args.file) {
-        console.log(yellow("Please provide a path to .proto file definition"));
+        console.log(yellow('Please provide a path to .proto file definition'));
         return;
       }
 
-      const serverPort = flags.port || "3009";
+      const serverPort = flags.port || '3009';
       const protoPath = path.resolve(process.cwd(), args.file);
 
       await startGRPCServer(protoPath, serverPort);
     } catch (e) {
-      console.log(red("OHOH! An error occurred while starting the GRPC mock server."));
+      console.log(red('OHOH! An error occurred while starting the GRPC mock server.'));
       console.log(e);
     }
   }
 }
 
-export = Bloomrpc
+export = Bloomrpc;
