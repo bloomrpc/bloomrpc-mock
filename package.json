@@ -1,7 +1,7 @@
 {
   "name": "bloomrpc-mock",
   "description": "Automock your grpc services",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": "Fabrizio Fenoglio (UtilityWarehouse)",
   "bin": {
     "brpc-mock": "./bin/run",

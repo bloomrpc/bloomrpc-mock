@@ -1,5 +1,5 @@
 import {UntypedServiceImplementation} from 'grpc';
-import {Enum, Field, Message, Service, Type} from 'protobufjs';
+import { Enum, Field, MapField, Message, Service, Type } from 'protobufjs';
 import * as uuid from 'uuid';
 
 export interface MethodPayload {
@@ -165,9 +165,25 @@ function mockField(field: Field): any {
     return mockEnum(field.resolvedType);
   }
 
-  switch (field.type) {
+  const mockPropertyValue = mockProperty(field.type, field.name);
+
+  if (mockPropertyValue === null) {
+    const resolvedField = field.resolve();
+    return mockField(resolvedField);
+  } else {
+    if (field instanceof MapField) {
+      return {
+        [mockProperty(field.keyType, field.name)]: mockPropertyValue
+      };
+    }
+    return mockPropertyValue;
+  }
+}
+
+function mockProperty(type: string, fieldName: string): any {
+  switch (type) {
   case 'string':
-    return interpretMockViaFieldName(field.name);
+    return interpretMockViaFieldName(fieldName);
   case 'number':
     return 10;
   case 'bool':
@@ -198,10 +214,8 @@ function mockField(field: Field): any {
     return 1.1;
   case 'bytes':
     return new Buffer('Hello');
-
   default:
-    const resolvedField = field.resolve();
-    return mockField(resolvedField);
+    return null;
   }
 }
 
