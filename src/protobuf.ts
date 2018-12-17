@@ -1,8 +1,9 @@
 import {load as grpcDef} from '@grpc/proto-loader';
 import * as fs from 'fs';
 import {GrpcObject, loadPackageDefinition} from 'grpc';
+import get = require('lodash/get');
 import * as path from 'path';
-import {ReflectionObject, Root, Service, Service as ProtoService} from 'protobufjs';
+import {Namespace, Root, Service, Service as ProtoService} from 'protobufjs';
 
 export interface Proto {
   fileName: string;
@@ -52,26 +53,47 @@ export function walkServices(proto: Proto, onService: (service: Service, def: an
 
   Object.keys(ast)
     .forEach(serviceName => {
-      const def: any = ast[serviceName];
+      const lookupType = root.lookup(serviceName);
+      if (lookupType && lookupType.constructor.name === 'Namespace') {
+        walkNamespace(root, namespace => {
+          const nestedNamespaceTypes = namespace.nested;
+          if (nestedNamespaceTypes) {
+            Object.keys(nestedNamespaceTypes).forEach(nestedTypeName => {
+              const nestedType = root.lookup(nestedTypeName);
+              if (nestedType instanceof Service) {
+                const fullNamespaceName = (namespace.fullName.startsWith('.'))
+                  ? namespace.fullName.replace('.', '')
+                  : namespace.fullName;
 
-      // Namespace detection.
-      if (typeof def === 'object') {
-        Object.keys(def).forEach(leaf => {
-          const namespace: ReflectionObject & { [key: string]: any } | void =
-            root.nested && root.nested[serviceName];
+                const serviceName = [
+                  ...fullNamespaceName.split('.'),
+                  nestedType.name
+                ];
 
-          if (!namespace) {
-            return;
+                onService(nestedType as Service, get(ast, serviceName), serviceName.join('.'));
+              }
+            });
           }
-
-          onService(namespace[leaf], def[leaf], `${serviceName}.${leaf}`);
         });
-        return;
+      } else {
+        // No namespace, root services
+        onService(serviceByName(root, serviceName), ast[serviceName], serviceName);
       }
-
-      // No namespace, root services
-      onService(serviceByName(root, serviceName), def, serviceName);
     });
+}
+
+export function walkNamespace(root: Root, onNamespace: (namespace: Namespace) => void, parentNamespace?: Namespace) {
+  const nestedType = (parentNamespace && parentNamespace.nested) || root.nested;
+
+  if (nestedType) {
+    Object.keys(nestedType).forEach((typeName: string) => {
+      const nestedNamespace = root.lookup(typeName);
+      if (nestedNamespace && nestedNamespace.constructor.name === 'Namespace') {
+        onNamespace(nestedNamespace as Namespace);
+        walkNamespace(root, onNamespace, nestedNamespace as Namespace);
+      }
+    });
+  }
 }
 
 export function serviceByName(root: Root, serviceName: string): ProtoService {

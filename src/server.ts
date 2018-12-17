@@ -39,6 +39,5 @@ function bindServiceToServer(service: Service, server: Server, def: any) {
     console.log(green(`    [Method] ${method} registered`))
   );
 
-  // console.log(def, serviceImpl)
   server.addService(def.service, serviceImpl);
 }
