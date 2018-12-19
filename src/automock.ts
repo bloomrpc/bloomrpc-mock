@@ -135,6 +135,7 @@ function mockTypeFields(type: Type): object {
   const fieldsData: { [key: string]: any } = {};
 
   return type.fieldsArray.reduce((data, field) => {
+    field.resolve();
     if (field.repeated) {
       data[field.name] = [mockField(field)];
     } else {
@@ -157,6 +158,25 @@ function mockEnum(enumType: Enum): number {
  * Mock a field
  */
 function mockField(field: Field): any {
+  if (field instanceof MapField) {
+    let mockPropertyValue = mockScalar(field.type, field.name);
+
+    if (mockPropertyValue === null) {
+      const resolvedType = field.resolvedType;
+      if (resolvedType instanceof Type) {
+        mockPropertyValue = mockTypeFields(resolvedType);
+      } else if (resolvedType instanceof Enum) {
+        mockPropertyValue = mockEnum(resolvedType);
+      } else if (resolvedType === null) {
+        mockPropertyValue = {};
+      }
+    }
+
+    return {
+      [mockScalar(field.keyType, field.name)]: mockPropertyValue,
+    };
+  }
+
   if (field.resolvedType instanceof Type) {
     return mockTypeFields(field.resolvedType);
   }
@@ -165,22 +185,17 @@ function mockField(field: Field): any {
     return mockEnum(field.resolvedType);
   }
 
-  const mockPropertyValue = mockProperty(field.type, field.name);
+  const mockPropertyValue = mockScalar(field.type, field.name);
 
   if (mockPropertyValue === null) {
     const resolvedField = field.resolve();
     return mockField(resolvedField);
   } else {
-    if (field instanceof MapField) {
-      return {
-        [mockProperty(field.keyType, field.name)]: mockPropertyValue
-      };
-    }
     return mockPropertyValue;
   }
 }
 
-function mockProperty(type: string, fieldName: string): any {
+function mockScalar(type: string, fieldName: string): any {
   switch (type) {
   case 'string':
     return interpretMockViaFieldName(fieldName);
