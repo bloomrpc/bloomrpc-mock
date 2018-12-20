@@ -1,22 +1,20 @@
-import { ReflectionObject, Root, Service, Service as ProtoService } from "protobufjs";
-import {load as grpcDef} from "@grpc/proto-loader";
-import {GrpcObject, loadPackageDefinition} from "grpc";
-import * as path from 'path';
+import {load as grpcDef} from '@grpc/proto-loader';
 import * as fs from 'fs';
-import { red } from 'colors/safe';
-
+import {GrpcObject, loadPackageDefinition} from 'grpc';
+import get = require('lodash/get');
+import * as path from 'path';
+import {Namespace, Root, Service, Service as ProtoService} from 'protobufjs';
 
 export interface Proto {
-  fileName: string,
-  filePath: string,
-  protoText: string,
-  ast: GrpcObject,
-  root: Root,
+  fileName: string;
+  filePath: string;
+  protoText: string;
+  ast: GrpcObject;
+  root: Root;
 }
 
 /**
  * Proto ast from filename
- * @param protoPath
  */
 export async function fromFileName(protoPath: string): Promise<Proto> {
   const packageDefinition = await grpcDef(protoPath, {
@@ -36,13 +34,12 @@ export async function fromFileName(protoPath: string): Promise<Proto> {
     }
   );
 
-
   const protoText = await promisifyRead(protoPath);
 
   return {
-    fileName: protoPath.split(path.sep).pop() || "",
+    fileName: protoPath.split(path.sep).pop() || '',
     filePath: protoPath,
-    protoText: protoText,
+    protoText,
     ast: protoAST,
     root,
   };
@@ -50,52 +47,71 @@ export async function fromFileName(protoPath: string): Promise<Proto> {
 
 /**
  * Walk through services
- * @param proto
- * @param onService
  */
 export function walkServices(proto: Proto, onService: (service: Service, def: any, serviceName: string) => void) {
   const {ast, root} = proto;
 
   Object.keys(ast)
-    .forEach((serviceName) => {
-      const def: any = ast[serviceName];
+    .forEach(serviceName => {
+      const lookupType = root.lookup(serviceName);
+      if (lookupType && lookupType.constructor.name === 'Namespace') {
+        walkNamespace(root, namespace => {
+          const nestedNamespaceTypes = namespace.nested;
+          if (nestedNamespaceTypes) {
+            Object.keys(nestedNamespaceTypes).forEach(nestedTypeName => {
+              const nestedType = root.lookup(nestedTypeName);
+              if (nestedType instanceof Service) {
+                const fullNamespaceName = (namespace.fullName.startsWith('.'))
+                  ? namespace.fullName.replace('.', '')
+                  : namespace.fullName;
 
-      // Namespace detection.
-      if (typeof def === "object") {
-        Object.keys(def).forEach(leaf => {
-          const namespace: ReflectionObject & { [key: string]: any } | void =
-            root.nested && root.nested[serviceName];
+                const serviceName = [
+                  ...fullNamespaceName.split('.'),
+                  nestedType.name
+                ];
 
-          if (!namespace) {
-            return;
+                onService(nestedType as Service, get(ast, serviceName), serviceName.join('.'));
+              }
+            });
           }
-
-          onService(namespace[leaf], def[leaf], `${serviceName}.${leaf}`);
         });
-        return;
+      } else {
+        // No namespace, root services
+        onService(serviceByName(root, serviceName), ast[serviceName], serviceName);
       }
-
-      // No namespace, root services
-      onService(serviceByName(root, serviceName), def, serviceName);
     });
+}
+
+export function walkNamespace(root: Root, onNamespace: (namespace: Namespace) => void, parentNamespace?: Namespace) {
+  const nestedType = (parentNamespace && parentNamespace.nested) || root.nested;
+
+  if (nestedType) {
+    Object.keys(nestedType).forEach((typeName: string) => {
+      const nestedNamespace = root.lookup(typeName);
+      if (nestedNamespace && nestedNamespace.constructor.name === 'Namespace') {
+        onNamespace(nestedNamespace as Namespace);
+        walkNamespace(root, onNamespace, nestedNamespace as Namespace);
+      }
+    });
+  }
 }
 
 export function serviceByName(root: Root, serviceName: string): ProtoService {
   if (!root.nested) {
-    throw new Error("Empty PROTO!");
+    throw new Error('Empty PROTO!');
   }
 
   const serviceLeaf = root.nested[serviceName];
-  return  root.lookupService(serviceLeaf.fullName);
+  return root.lookupService(serviceLeaf.fullName);
 }
 
 function promisifyRead(fileName: string): Promise<string> {
   return new Promise((resolve, reject) => {
     fs.readFile(fileName, 'utf8', function (err, result) {
       if (err) {
-        reject(err)
+        reject(err);
       } else {
-        resolve(result)
+        resolve(result);
       }
     });
   });
