@@ -18,7 +18,7 @@ export interface Proto {
  * Proto ast from filename
  */
 export async function fromFileName(protoPath: string, includeDirs?: string[]): Promise<Proto> {
-  includeDirs = includeDirs ? includeDirs : [];
+  includeDirs = includeDirs ? [...includeDirs] : [];
   if (path.isAbsolute(protoPath)) {
     includeDirs.push(
       path.dirname(protoPath)
