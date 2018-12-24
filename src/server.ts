@@ -1,14 +1,20 @@
 import {bgCyan, green, yellow} from 'colors/safe';
-import {Server, ServerCredentials} from 'grpc';
+import {KeyCertPair, Server, ServerCredentials} from 'grpc';
 import {Service} from 'protobufjs';
 
 import {mockServiceMethods} from './automock';
 import {fromFileName, walkServices} from './protobuf';
 
+interface SecureCredentials {
+  rootCerts: Buffer | null;
+  keyCertPairs: KeyCertPair[];
+  checkClientCertificate?: boolean;
+}
+
 /**
  * Start a mock GRPC Server
  */
-export async function startGRPCServer(protoPath: string, serverPort: string) {
+export async function startGRPCServer(protoPath: string, serverPort: string, secureCredentials?: SecureCredentials) {
   const server = new Server({});
 
   const proto = await fromFileName(protoPath);
@@ -24,7 +30,17 @@ export async function startGRPCServer(protoPath: string, serverPort: string) {
     return;
   }
 
-  server.bind(`0.0.0.0:${serverPort}`, ServerCredentials.createInsecure());
+  let credentials = ServerCredentials.createInsecure();
+
+  if (secureCredentials) {
+    credentials = ServerCredentials.createSsl(
+      secureCredentials.rootCerts,
+      secureCredentials.keyCertPairs,
+      secureCredentials.checkClientCertificate,
+    );
+  }
+
+  server.bind(`0.0.0.0:${serverPort}`, credentials);
   server.start();
 
   console.log(bgCyan(`\nGRPC Server listening on port ${serverPort}!`));

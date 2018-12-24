@@ -3,6 +3,7 @@ import {red, white, yellow} from 'colors/safe';
 import * as path from 'path';
 
 import {startGRPCServer} from '../server';
+import * as fs from "fs";
 
 class Bloomrpc extends Command {
   static description = 'Automock a GRPC Server from a proto definition';
@@ -12,7 +13,9 @@ class Bloomrpc extends Command {
     version: flags.version({char: 'v'}),
     help: flags.help({char: 'h'}),
 
-    port: flags.string({char: 'p', default: '3009'})
+    port: flags.string({char: 'p', default: '3009'}),
+    rootCert: flags.string({char: 'r'}),
+    keyCertPairs: flags.string({char: 'k'}),
   };
 
   static args = [{name: 'file'}];
@@ -44,7 +47,21 @@ class Bloomrpc extends Command {
       const serverPort = flags.port || '3009';
       const protoPath = path.resolve(process.cwd(), args.file);
 
-      await startGRPCServer(protoPath, serverPort);
+      let credentials;
+
+      if (flags.rootCert) {
+        const certs = (flags.keyCertPairs as string).split(',');
+
+        credentials = {
+          rootCerts: fs.readFileSync(flags.rootCert),
+          keyCertPairs: [{
+            private_key: fs.readFileSync(certs[0]),
+            cert_chain: fs.readFileSync(certs[1]),
+          }]
+        };
+      }
+
+      await startGRPCServer(protoPath, serverPort, credentials);
     } catch (e) {
       console.log(red('OHOH! An error occurred while starting the GRPC mock server.'));
       console.log(e);
