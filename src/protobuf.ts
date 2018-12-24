@@ -1,9 +1,10 @@
-import {load as grpcDef} from '@grpc/proto-loader';
 import * as fs from 'fs';
 import {GrpcObject, loadPackageDefinition} from 'grpc';
 import get = require('lodash/get');
 import * as path from 'path';
 import {Namespace, Root, Service, Service as ProtoService} from 'protobufjs';
+
+import {load as grpcDef} from './protoloader';
 
 export interface Proto {
   fileName: string;
@@ -16,18 +17,36 @@ export interface Proto {
 /**
  * Proto ast from filename
  */
-export async function fromFileName(protoPath: string): Promise<Proto> {
-  const packageDefinition = await grpcDef(protoPath, {
+export async function fromFileName(protoPath: string, includeDirs?: string[]): Promise<Proto> {
+  includeDirs = includeDirs ? includeDirs : [];
+  if (path.isAbsolute(protoPath)) {
+    includeDirs.push(
+      path.dirname(protoPath)
+    );
+  } else {
+    includeDirs.push(
+      path.dirname(path.join(process.cwd(), protoPath))
+    );
+  }
+
+  const packageDefinition = await grpcDef(path.basename(protoPath), {
     keepCase: true,
     longs: String,
     enums: String,
     defaults: true,
-    oneofs: true
+    oneofs: true,
+    includeDirs,
   });
 
   const protoAST = loadPackageDefinition(packageDefinition);
 
-  const root = await new Root().load(
+  const protoRoot = new Root();
+
+  if (includeDirs) {
+    addIncludePathToRoot(protoRoot, includeDirs);
+  }
+
+  const root = await protoRoot.load(
     protoPath,
     {
       keepCase: true,
@@ -115,4 +134,23 @@ function promisifyRead(fileName: string): Promise<string> {
       }
     });
   });
+}
+
+function addIncludePathToRoot(root: Root, includePaths: string[]) {
+  const originalResolvePath = root.resolvePath;
+  root.resolvePath = (origin: string, target: string) => {
+    if (path.isAbsolute(target)) {
+      return target;
+    }
+    for (const directory of includePaths) {
+      const fullPath: string = path.join(directory, target);
+      try {
+        fs.accessSync(fullPath, fs.constants.R_OK);
+        return fullPath;
+      } catch (err) {
+        continue;
+      }
+    }
+    return originalResolvePath(origin, target);
+  };
 }

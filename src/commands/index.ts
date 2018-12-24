@@ -16,6 +16,7 @@ class Bloomrpc extends Command {
     port: flags.string({char: 'p', default: '3009'}),
     rootCert: flags.string({char: 'r'}),
     keyCertPairs: flags.string({char: 'k'}),
+    include: flags.string({char: 'i', multiple: true}),
   };
 
   static args = [{name: 'file'}];
@@ -61,7 +62,7 @@ class Bloomrpc extends Command {
         };
       }
 
-      await startGRPCServer(protoPath, serverPort, credentials);
+      await startGRPCServer(protoPath, serverPort, credentials, flags.include);
     } catch (e) {
       console.log(red('OHOH! An error occurred while starting the GRPC mock server.'));
       console.log(e);

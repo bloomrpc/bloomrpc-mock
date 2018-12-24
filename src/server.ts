@@ -14,10 +14,10 @@ interface SecureCredentials {
 /**
  * Start a mock GRPC Server
  */
-export async function startGRPCServer(protoPath: string, serverPort: string, secureCredentials?: SecureCredentials) {
+export async function startGRPCServer(protoPath: string, serverPort: string, secureCredentials?: SecureCredentials, includeDirs?: string[]) {
   const server = new Server({});
 
-  const proto = await fromFileName(protoPath);
+  const proto = await fromFileName(protoPath, includeDirs || []);
 
   let services = 0;
   walkServices(proto, (service, def) => {
