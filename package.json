@@ -1,7 +1,7 @@
 {
   "name": "bloomrpc-mock",
   "description": "Automock your grpc services",
-  "version": "0.2.5-alpha-1",
+  "version": "0.2.5-alpha-2",
   "author": "Fabrizio Fenoglio (UtilityWarehouse)",
   "bin": {
     "brpc-mock": "./bin/run",
@@ -39,7 +39,8 @@
   },
   "files": [
     "/bin",
-    "/lib"
+    "/lib",
+    "/common"
   ],
   "homepage": "https://github.com/uw-labs/bloomrpc-mocks",
   "keywords": [
