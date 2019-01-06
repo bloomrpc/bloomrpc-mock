@@ -207,9 +207,9 @@ function mockScalar(type: string, fieldName: string): any {
     return 10;
   case 'int64':
     return 20;
-  case 'unit32':
+  case 'uint32':
     return 100;
-  case 'unit64':
+  case 'uint64':
     return 100;
   case 'sint32':
     return 100;
