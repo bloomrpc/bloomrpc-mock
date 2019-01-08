@@ -2,7 +2,18 @@ import * as fs from 'fs';
 import {GrpcObject, loadPackageDefinition} from 'grpc';
 import get = require('lodash/get');
 import * as path from 'path';
-import {Namespace, Root, Service, Service as ProtoService} from 'protobufjs';
+import {
+  Enum,
+  Field,
+  MapField, Method,
+  Namespace,
+  OneOf,
+  ReflectionObject,
+  Root,
+  Service,
+  Service as ProtoService,
+  Type,
+} from 'protobufjs';
 
 import {load as grpcDef} from './protoloader';
 
@@ -75,7 +86,7 @@ export function walkServices(proto: Proto, onService: (service: Service, def: an
   Object.keys(ast)
     .forEach(serviceName => {
       const lookupType = root.lookup(serviceName);
-      if (lookupType && lookupType.constructor.name === 'Namespace') {
+      if (lookupType && isNamespace(lookupType)) {
         walkNamespace(root, namespace => {
           const nestedNamespaceTypes = namespace.nested;
           if (nestedNamespaceTypes) {
@@ -109,7 +120,7 @@ export function walkNamespace(root: Root, onNamespace: (namespace: Namespace) =>
   if (nestedType) {
     Object.keys(nestedType).forEach((typeName: string) => {
       const nestedNamespace = root.lookup(typeName);
-      if (nestedNamespace && nestedNamespace.constructor.name === 'Namespace') {
+      if (nestedNamespace && isNamespace(nestedNamespace)) {
         onNamespace(nestedNamespace as Namespace);
         walkNamespace(root, onNamespace, nestedNamespace as Namespace);
       }
@@ -155,4 +166,21 @@ function addIncludePathToRoot(root: Root, includePaths: string[]) {
     }
     return originalResolvePath(origin, target);
   };
+}
+
+function isNamespace(lookupType: ReflectionObject) {
+  if (
+    (lookupType instanceof Namespace) &&
+    !(lookupType instanceof Service) &&
+    !(lookupType instanceof Type) &&
+    !(lookupType instanceof Enum) &&
+    !(lookupType instanceof Field) &&
+    !(lookupType instanceof MapField) &&
+    !(lookupType instanceof OneOf) &&
+    !(lookupType instanceof Method)
+  ) {
+    return true;
+  }
+
+  return false;
 }
