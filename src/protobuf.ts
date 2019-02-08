@@ -15,7 +15,7 @@ import {
   Type,
 } from 'protobufjs';
 
-import {load as grpcDef} from './protoloader';
+import {load as grpcDef} from '@grpc/proto-loader';
 
 export interface Proto {
   fileName: string;
@@ -83,31 +83,31 @@ export async function fromFileName(protoPath: string, includeDirs?: string[]): P
 export function walkServices(proto: Proto, onService: (service: Service, def: any, serviceName: string) => void) {
   const {ast, root} = proto;
 
+  walkNamespace(root, namespace => {
+    const nestedNamespaceTypes = namespace.nested;
+    if (nestedNamespaceTypes) {
+      Object.keys(nestedNamespaceTypes).forEach(nestedTypeName => {
+        const nestedType = root.lookup(nestedTypeName);
+        if (nestedType instanceof Service) {
+          const fullNamespaceName = (namespace.fullName.startsWith('.'))
+            ? namespace.fullName.replace('.', '')
+            : namespace.fullName;
+
+          const serviceName = [
+            ...fullNamespaceName.split('.'),
+            nestedType.name
+          ];
+
+          onService(nestedType as Service, get(ast, serviceName), serviceName.join('.'));
+        }
+      });
+    }
+  });
+
   Object.keys(ast)
     .forEach(serviceName => {
       const lookupType = root.lookup(serviceName);
-      if (lookupType && isNamespace(lookupType)) {
-        walkNamespace(root, namespace => {
-          const nestedNamespaceTypes = namespace.nested;
-          if (nestedNamespaceTypes) {
-            Object.keys(nestedNamespaceTypes).forEach(nestedTypeName => {
-              const nestedType = root.lookup(nestedTypeName);
-              if (nestedType instanceof Service) {
-                const fullNamespaceName = (namespace.fullName.startsWith('.'))
-                  ? namespace.fullName.replace('.', '')
-                  : namespace.fullName;
-
-                const serviceName = [
-                  ...fullNamespaceName.split('.'),
-                  nestedType.name
-                ];
-
-                onService(nestedType as Service, get(ast, serviceName), serviceName.join('.'));
-              }
-            });
-          }
-        });
-      } else {
+      if (lookupType instanceof Service) {
         // No namespace, root services
         onService(serviceByName(root, serviceName), ast[serviceName], serviceName);
       }
@@ -119,6 +119,10 @@ export function walkNamespace(root: Root, onNamespace: (namespace: Namespace) =>
 
   if (nestedType) {
     Object.keys(nestedType).forEach((typeName: string) => {
+      if (parentNamespace && parentNamespace.name === typeName) {
+        // TODO: traverse recursively for identical namespace name
+        typeName = typeName + '.' + typeName;
+      }
       const nestedNamespace = root.lookup(typeName);
       if (nestedNamespace && isNamespace(nestedNamespace)) {
         onNamespace(nestedNamespace as Namespace);
