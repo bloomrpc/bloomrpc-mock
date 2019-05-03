@@ -29,8 +29,7 @@ export interface Proto {
  * Proto ast from filename
  */
 export async function fromFileName(protoPath: string, includeDirs?: string[]): Promise<Proto> {
-  const commonPath = path.resolve(__dirname, '..', 'common');
-  includeDirs = includeDirs ? [...includeDirs, commonPath] : [commonPath];
+  includeDirs = includeDirs ? [...includeDirs] : [];
 
   if (path.isAbsolute(protoPath)) {
     includeDirs.push(
