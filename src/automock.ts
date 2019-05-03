@@ -136,11 +136,15 @@ function mockTypeFields(type: Type): object {
 
   return type.fieldsArray.reduce((data, field) => {
     field.resolve();
-    if (field.repeated) {
-      data[field.name] = [mockField(field)];
-    } else {
-      data[field.name] = mockField(field);
+
+    if (field.parent !== field.resolvedType) {
+      if (field.repeated) {
+        data[field.name] = [mockField(field)];
+      } else {
+        data[field.name] = mockField(field);
+      }
     }
+
     return data;
   }, fieldsData);
 }
@@ -189,6 +193,7 @@ function mockField(field: Field): any {
 
   if (mockPropertyValue === null) {
     const resolvedField = field.resolve();
+
     return mockField(resolvedField);
   } else {
     return mockPropertyValue;
