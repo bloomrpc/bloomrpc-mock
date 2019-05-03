@@ -87,18 +87,21 @@ export function walkServices(proto: Proto, onService: (service: Service, def: an
     const nestedNamespaceTypes = namespace.nested;
     if (nestedNamespaceTypes) {
       Object.keys(nestedNamespaceTypes).forEach(nestedTypeName => {
-        const nestedType = root.lookup(nestedTypeName);
-        if (nestedType instanceof Service) {
-          const fullNamespaceName = (namespace.fullName.startsWith('.'))
-            ? namespace.fullName.replace('.', '')
-            : namespace.fullName;
+        const fullNamespaceName = (namespace.fullName.startsWith('.'))
+          ? namespace.fullName.replace('.', '')
+          : namespace.fullName;
 
+        const nestedType = root.lookup(`${fullNamespaceName}.${nestedTypeName}`);
+
+        if (nestedType instanceof Service) {
           const serviceName = [
             ...fullNamespaceName.split('.'),
             nestedType.name
           ];
 
-          onService(nestedType as Service, get(ast, serviceName), serviceName.join('.'));
+          const fullyQualifiedServiceName = serviceName.join('.');
+
+          onService(nestedType as Service, get(ast, serviceName), fullyQualifiedServiceName);
         }
       });
     }
