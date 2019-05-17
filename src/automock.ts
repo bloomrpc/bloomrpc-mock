@@ -1,5 +1,5 @@
 import {UntypedServiceImplementation} from 'grpc';
-import { Enum, Field, MapField, Message, Service, Type } from 'protobufjs';
+import {Enum, Field, MapField, Message, OneOf, Service, Type} from 'protobufjs';
 import * as uuid from 'uuid';
 
 export interface MethodPayload {
@@ -163,12 +163,20 @@ function mockEnum(enumType: Enum): number {
  */
 function mockField(field: Field): any {
   if (field instanceof MapField) {
-    let mockPropertyValue = mockScalar(field.type, field.name);
+    let mockPropertyValue = null;
+    if (field.resolvedType === null) {
+      mockPropertyValue = mockScalar(field.type, field.name);
+    }
 
     if (mockPropertyValue === null) {
       const resolvedType = field.resolvedType;
+
       if (resolvedType instanceof Type) {
-        mockPropertyValue = mockTypeFields(resolvedType);
+        if (resolvedType.oneofs) {
+          mockPropertyValue = pickOneOf(resolvedType.oneofsArray);
+        } else {
+          mockPropertyValue = mockTypeFields(resolvedType);
+        }
       } else if (resolvedType instanceof Enum) {
         mockPropertyValue = mockEnum(resolvedType);
       } else if (resolvedType === null) {
@@ -198,6 +206,13 @@ function mockField(field: Field): any {
   } else {
     return mockPropertyValue;
   }
+}
+
+function pickOneOf(oneofs: OneOf[]) {
+  return oneofs.reduce((fields: {[key: string]: any}, oneOf) => {
+    fields[oneOf.name] = mockField(oneOf.fieldsArray[0]);
+    return fields;
+  }, {});
 }
 
 function mockScalar(type: string, fieldName: string): any {
