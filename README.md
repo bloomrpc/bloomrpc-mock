@@ -52,4 +52,4 @@ GRPC Server listening on port 3009!
 ### Planned features:
 
 - [ ] Being able to provide custom mocks responses
-- [ ] Client Side and Bi-Directional Streaming Support
+- [x] Client Side and Bi-Directional Streaming Support
