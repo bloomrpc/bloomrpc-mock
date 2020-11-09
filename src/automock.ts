@@ -16,6 +16,8 @@ const enum MethodType {
   response
 }
 
+const MAX_STACK_SIZE = 3;
+
 /**
  * Mock a service
  */
@@ -128,10 +130,21 @@ function mockMethodReturnType(
   }, {});
 }
 
+type StackDepth = {
+  [type: string]: number;
+};
 /**
  * Mock a field type
  */
-function mockTypeFields(type: Type): object {
+function mockTypeFields(type: Type, stackDepth: StackDepth = {}): object {
+  if (stackDepth[type.name] > MAX_STACK_SIZE) {
+    return {};
+  }
+  if (!stackDepth[type.name]) {
+    stackDepth[type.name] = 0;
+  }
+  stackDepth[type.name]++;
+
   const fieldsData: { [key: string]: any } = {};
 
   return type.fieldsArray.reduce((data, field) => {
@@ -139,9 +152,9 @@ function mockTypeFields(type: Type): object {
 
     if (field.parent !== field.resolvedType) {
       if (field.repeated) {
-        data[field.name] = [mockField(field)];
+        data[field.name] = [mockField(field, stackDepth)];
       } else {
-        data[field.name] = mockField(field);
+        data[field.name] = mockField(field, stackDepth);
       }
     }
 
@@ -161,7 +174,7 @@ function mockEnum(enumType: Enum): number {
 /**
  * Mock a field
  */
-function mockField(field: Field): any {
+function mockField(field: Field, stackDepth?: StackDepth): any {
   if (field instanceof MapField) {
     let mockPropertyValue = null;
     if (field.resolvedType === null) {
@@ -190,7 +203,7 @@ function mockField(field: Field): any {
   }
 
   if (field.resolvedType instanceof Type) {
-    return mockTypeFields(field.resolvedType);
+    return mockTypeFields(field.resolvedType, stackDepth);
   }
 
   if (field.resolvedType instanceof Enum) {
@@ -202,7 +215,7 @@ function mockField(field: Field): any {
   if (mockPropertyValue === null) {
     const resolvedField = field.resolve();
 
-    return mockField(resolvedField);
+    return mockField(resolvedField, stackDepth);
   } else {
     return mockPropertyValue;
   }
