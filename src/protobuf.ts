@@ -116,14 +116,27 @@ export function walkServices(proto: Proto, onService: (service: Service, def: an
     });
 }
 
+export function matchingAncestorNamespaceLookup(typeName: string, parentNamespace: Namespace, namespaceChain: string) {
+  if (!parentNamespace.parent) {
+    // Root namespace
+    const namespaceElements = namespaceChain.split(".")
+    const firstOccurrence = namespaceElements.indexOf(typeName)
+    const lastOccurrence = namespaceElements.lastIndexOf(typeName)
+    return namespaceElements.slice(firstOccurrence, lastOccurrence + 1).join(".")
+  }
+
+  namespaceChain = parentNamespace.name + "." + namespaceChain
+
+  return matchingAncestorNamespaceLookup(typeName, parentNamespace.parent, namespaceChain)
+}
+
 export function walkNamespace(root: Root, onNamespace: (namespace: Namespace) => void, parentNamespace?: Namespace) {
   const nestedType = (parentNamespace && parentNamespace.nested) || root.nested;
 
   if (nestedType) {
     Object.keys(nestedType).forEach((typeName: string) => {
-      if (parentNamespace && parentNamespace.name === typeName) {
-        // TODO: traverse recursively for identical namespace name
-        typeName = typeName + '.' + typeName;
+      if (parentNamespace) {
+        typeName = matchingAncestorNamespaceLookup(typeName, parentNamespace, typeName);
       }
       const nestedNamespace = root.lookup(typeName);
       if (nestedNamespace && isNamespace(nestedNamespace)) {
