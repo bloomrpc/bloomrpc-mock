@@ -42,7 +42,7 @@
     "/lib",
     "/common"
   ],
-  "homepage": "https://github.com/uw-labs/bloomrpc-mocks",
+  "homepage": "https://github.com/uw-labs/bloomrpc-mock",
   "keywords": [
     "oclif"
   ],
