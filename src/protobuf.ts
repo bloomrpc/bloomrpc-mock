@@ -131,7 +131,7 @@ export function matchingAncestorNamespaceLookup(typeName: string, parentNamespac
 }
 
 export function walkNamespace(root: Root, onNamespace: (namespace: Namespace) => void, parentNamespace?: Namespace) {
-  const nestedType = (parentNamespace && parentNamespace.nested) || root.nested;
+  const nestedType = parentNamespace ? parentNamespace.nested : root.nested;
 
   if (nestedType) {
     Object.keys(nestedType).forEach((typeName: string) => {
