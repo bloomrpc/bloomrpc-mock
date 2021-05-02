@@ -141,7 +141,11 @@ export function walkNamespace(root: Root, onNamespace: (namespace: Namespace) =>
       const nestedNamespace = root.lookup(typeName);
       if (nestedNamespace && isNamespace(nestedNamespace)) {
         onNamespace(nestedNamespace as Namespace);
-        walkNamespace(root, onNamespace, nestedNamespace as Namespace);
+
+        // Do not search inside of empty namespaces
+        if ((nestedNamespace as Namespace).nested) {
+          walkNamespace(root, onNamespace, nestedNamespace as Namespace);
+        }
       }
     });
   }
