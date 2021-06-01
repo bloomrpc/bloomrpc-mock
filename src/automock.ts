@@ -261,7 +261,13 @@ function mockScalar(type: string, fieldName: string): any {
   case 'float':
     return 1.1;
   case 'bytes':
-    return new Buffer('Hello');
+    let bytes = [];
+    const str = 'Hello';
+    let buffer = new Buffer(str, 'utf16le');
+    for (let b of buffer) {
+      bytes.push(b);
+    }
+    return bytes;
   default:
     return null;
   }
