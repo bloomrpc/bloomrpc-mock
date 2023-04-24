@@ -21,7 +21,7 @@
     "protobufjs": "^6.11.2",
     "tslib": "^1",
     "uuid": "^3.3.2",
-    "yaml": "^1.0.2"
+    "yaml": "^2.2.2"
   },
   "devDependencies": {
     "@oclif/tslint": "^3",
