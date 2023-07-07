@@ -18,7 +18,7 @@
     "google-protobuf": "^3.6.1",
     "grpc": "1.24.7",
     "lodash": "^4.17.11",
-    "protobufjs": "^6.11.2",
+    "protobufjs": "^7.2.4",
     "tslib": "^1",
     "uuid": "^3.3.2",
     "yaml": "^1.0.2"
